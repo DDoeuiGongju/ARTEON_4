@@ -33,13 +33,17 @@ class VideoWindow(QWidget):
 
         self.video_thread = VideoThread()
         self.video_thread.changePixmap.connect(self.setImage)
-        self.video_thread.start()
 
         self.upperLabel = QLabel(self)
         self.upperLabel.resize(QSize(background_w, int(background_h*0.168)))
         upperImage = QPixmap('./image/background_image/upper.png').scaled(QSize(background_w, int(background_h*0.168)))
         self.upperLabel.setPixmap(QPixmap(upperImage))
 
+        self.btnGroup = QButtonGroup()
+        self.btnGroup.setExclusive(False)
+        self.btnGroup.buttonClicked[int].connect(self.setFace)
+        self.face_file_path = []
+        self.body_file_path =[]
 
         self.last_point = QPoint()
 
@@ -84,9 +88,13 @@ class VideoWindow(QWidget):
         self.faceButton = QPushButton(self)
         self.faceButton.setIcon(QIcon('./image/button_image/face.png'))
         self.faceButton.setIconSize(QSize(face_w, face_h))
-        self.faceButton.clicked.connect(self.setFace)
+        self.faceButton.clicked.connect(self.faceEvent)
         self.faceButton.setGeometry(face_x, face_y, face_w, face_h)
         self.faceButton.setStyleSheet("background-color: rgba(0,0,0,0%);border-style: outset;")
+
+        self.layer_xywh = QRect(0, int(background_h * 0.8286), background_w, int(background_h * 0.1718))
+        self.createLayout_Container()
+        self.scrollarea.setVisible(False)
 
     @pyqtSlot(np.ndarray)
     def setImage(self, frame):
@@ -125,23 +133,21 @@ class VideoWindow(QWidget):
                 self, 'Message', 'Sticker has been saved :)'
             )
 
-    def setFace(self):
-        self.layer_xywh = QRect(0, int(background_h*0.8286), background_w, int(background_h*0.1718))
-        self.createLayout_Container()
-
+    def setFace(self, num):
+        print('./image/face_큰창/'+self.face_file_path[num])
 
     def createLayout_group(self):
         sgroupbox = QGroupBox(self)
-        stickerView_w, stickerView_h = int(background_w * 0.2), int(background_h * 0.137)
+        stickerView_w, stickerView_h = int(background_w * 0.2375), int(background_h*0.1542)
 
         layout_groupbox = QHBoxLayout(sgroupbox)
         layout_groupbox.setContentsMargins(0, 0, 0, 0)
 
-        file_list = os.listdir('./image/sticker_image/')
+        file_list = os.listdir('./image/face_썸네일/')
         for i in range(len(file_list)):
-            self.file_path.append('./image/sticker_image/' + file_list[i])
+            self.face_file_path.append(file_list[i])
             button = (QPushButton(self))
-            button.setIcon(QIcon('./image/sticker_image/' + file_list[i]))
+            button.setIcon(QIcon('./image/face_썸네일/' + file_list[i]))
             button.setIconSize(QSize(stickerView_w, stickerView_h))
             button.setStyleSheet("background-color: rgba(0,0,0,0%);border-style: outset;")
             self.btnGroup.addButton(button, i)
@@ -156,6 +162,10 @@ class VideoWindow(QWidget):
         self.scrollarea.setWidgetResizable(True)
         self.scrollarea.setWidget(self.createLayout_group())
 
+    def faceEvent(self):
+        self.video_thread.start()
+        self.scrollarea.setVisible(True)
+
 
 
 class VideoThread(QThread):
@@ -167,5 +177,4 @@ class VideoThread(QThread):
         while self.capture:
             ret, frame = cap.read()
             frame = cv2.flip(frame, 1)
-            print(1)
             self.changePixmap.emit(frame)

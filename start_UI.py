@@ -8,6 +8,7 @@ from base_value import background_w, background_h
 import sticker
 import learn
 import video
+import background
 
 class StartWindow(QtWidgets.QMainWindow):
     def __init__(self):
@@ -64,7 +65,6 @@ class FirstWindow(QtWidgets.QMainWindow):
         self._learn_window = None
 
     def buttonPressEvent(self, button):
-        self.close()
         if button == 'make':
             if self._make_window is None:
                 self._make_window = MakeWindow()
@@ -73,6 +73,7 @@ class FirstWindow(QtWidgets.QMainWindow):
             if self._learn_window is None:
                 self._learn_window = learn.LearnWindow()
             self._learn_window.show()
+        self.close()
 
 class MakeWindow(QtWidgets.QMainWindow):
     def __init__(self):
@@ -118,20 +119,22 @@ class MakeWindow(QtWidgets.QMainWindow):
 
         self._sticker_window = None
         self._video_window = None
+        self._background_window = None
 
     def buttonPressEvent(self, select):
         if select == 1:
             if self._video_window is None:
                 self._video_window = video.VideoWindow()
-            self.close()
             self._video_window.show()
         elif select == 2:
-            print(2)
+            if self._background_window is None:
+                self._background_window = background.BackWindow()
+            self._background_window.show()
         elif select == 3:
             if self._sticker_window is None:
                 self._sticker_window = sticker.StickerWindow()
-            self.close()
             self._sticker_window.show()
+        self.close()
 
 
 

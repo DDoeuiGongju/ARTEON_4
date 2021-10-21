@@ -21,6 +21,7 @@ class StickerWindow(QWidget):
         upperImage = QPixmap('./image/background_image/upper.png').scaled(QSize(background_w, int(background_h*0.168)))
         self.upperLabel.setPixmap(QPixmap(upperImage))
 
+
         self._back_window = None
         self.back = QPushButton(self)
         self.back.setIcon(QIcon('./image/button_image/back.png'))
@@ -133,12 +134,8 @@ class StickerWindow(QWidget):
         self.saveButton = QPushButton(self)
         self.saveButton.setIcon(QIcon('./image/button_image/save.png'))
         self.saveButton.setIconSize(QSize(save_w, save_h))
-
         self.saveButton.clicked.connect(self.saveResult)
-
         self.saveButton.setGeometry(save_x, save_y, save_w, save_h)
-
-        # self.normalPen.setStyleSheet("background-image:url(brush.png);background-color: rgba(0,0,0,0%);border-style: outset;")
         self.saveButton.setStyleSheet("background-color: rgba(0,0,0,0%);border-style: outset;")
 
         self.slider = QSlider(Qt.Vertical, self)
@@ -250,7 +247,7 @@ class StickerWindow(QWidget):
             self.last_point = e.pos()
         else:
             stickerImage = QPainter(self.image)
-            stickerImage.drawPixmap(e.pos(), QPixmap(self.veiwImage))
+            stickerImage.drawPixmap(e.x()*0.85, e.y()*0.85, QPixmap(self.veiwImage))
             self.update()
 
 
@@ -268,7 +265,7 @@ class StickerWindow(QWidget):
             self.drawing = False
 
     def saveResult(self):
-        fpath, _ = QFileDialog.getSaveFileName(self, 'Save Image', '', "PNG(*.png);;JPEG(*.jpg *.jpeg);;All Files(*.*) ")
+        fpath, _ = QFileDialog.getSaveFileName(self, 'Save Image', '', "PNG(*.png);;JPEG(*.jpg *.jpeg);;All Files(*.*)")
 
         if fpath:
             self.image.save(fpath)

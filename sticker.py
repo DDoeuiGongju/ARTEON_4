@@ -4,24 +4,38 @@ from PyQt5.QtCore import *
 
 import os
 
-from base_value import background_w, background_h
+from base_value import background_w, background_h, style1, style2
 import start_UI
+import email_send
 
-class StickerWindow(QWidget):
+class StickerWindow(QMainWindow):
     def __init__(self):
         super().__init__()
 
-        self.startImage = QImage('./image/background_image/sticker_back1.png')
-        self.startImage = self.startImage.scaled(QSize(background_w, background_h))
-        self.palette = QPalette()
-        self.palette.setBrush(10, QBrush(self.startImage))
+        # 배경 이미지
+        self.mainLabel = QLabel(self)
+        self.mainLabel.resize(QSize(background_w, background_h))
 
+        self.startImage = QPixmap('./image/background_image/sticker_back1_.jpg')
+        self.startImage = self.startImage.scaled(QSize(background_w, background_h))
+        self.mainLabel.setPixmap(self.startImage)
+        # self.palette = QPalette()
+        # self.palette.setBrush(10, QBrush(self.startImage))
+
+        # 상단 이미지
         self.upperLabel = QLabel(self)
         self.upperLabel.resize(QSize(background_w, int(background_h*0.168)))
         upperImage = QPixmap('./image/background_image/upper.png').scaled(QSize(background_w, int(background_h*0.168)))
         self.upperLabel.setPixmap(QPixmap(upperImage))
 
+        self.anotherLabel = QLabel(self)
+        self.anotherLabel.resize(QSize(int(background_w * 0.06481), int(background_w * 0.06481)))
+        upperImage = QPixmap('./image/button_image/another4.png').scaled(
+            QSize(int(background_w * 0.06481), int(background_w * 0.06481)))
+        self.anotherLabel.setPixmap(QPixmap(upperImage))
+        self.anotherLabel.move(int(background_w * 0.84444), int(background_h * 0.17447))
 
+        # 뒤로가기 버튼
         self._back_window = None
         self.back = QPushButton(self)
         self.back.setIcon(QIcon('./image/button_image/back.png'))
@@ -31,45 +45,55 @@ class StickerWindow(QWidget):
                               int(background_h * 0.026))
         self.back.clicked.connect(self.backPressEvent)
 
+        #스티커 그림이 그려질 공간
         self.image_x = 0
-        self.image_y = int(background_h*0.093)
+        self.image_y = int(background_h * 0.0927)
         self.image_w = background_w
-        self.image_h = int(background_h*0.83)
+        self.image_h = int(background_h * 0.7354)
+        self.imageLabel = QLabel(self)
+        self.piximage = QPixmap('./image/background_image/canvas.png').scaled(QSize(self.image_w, self.image_h))
+        self.imageLabel.setGeometry(self.image_x, self.image_y, self.image_w, self.image_h)
+        self.imageLabel.setPixmap(QPixmap(self.piximage))
+        self.imageLabel.lower()
+        self.mainLabel.lower()
 
-        # self.image = QImage(QSize(self.image_w, self.image_h), QImage.Format_RGB32)
-        self.image = QImage('./image/background_image/canvas.png').scaled(QSize(self.image_w, self.image_h))
         self.drawing = False
         self.brush_size = 5
         self.brush_alpha = 255
         self.brush_color = QColor(0, 0, 0, self.brush_alpha)
         self.r, self.g, self.b = 0, 0, 0
 
+        self.sticker_ex = QLabel(self)            # 임시 스티커 공간
+        self.sticker_size = int(background_w*0.2) # 초기 스티커 사이즈
+        self.viewImage = None                     # 선택된 스티커 이미지
+        self.viewImage_path = []                  # 선택된 스티커 이미지 경로
+
         self.last_point = QPoint()
 
+        # 스티커 그룹
         self.stickerEvent = False
         self.btnGroup = QButtonGroup()
         self.btnGroup.setExclusive(False)
         self.btnGroup.buttonClicked[int].connect(self.setStickerEvent)
         self.file_path = []
 
-        self.setColorButton()
-        self.setPenButton()
-        self.setAnotherButton()
+        # 실행취소/다시실행 buffer
+        self.undo = []
+        self.redo = []
 
-        self.setPalette(self.palette)
-        self.setWindowTitle('이리오너라')
-        self.setGeometry(0, 0, background_w, background_h)
-        self.show()
+
+        self.setColorButton()
+        # self.setPenButton()
+        self.setAnotherButton()
 
     def backPressEvent(self):
         if self._back_window is None:
             self._back_window = start_UI.MakeWindow()
-        self.close()
-        self._back_window.show()
+        # self._back_window.show()
+        self.setCentralWidget(self._back_window)
+        # self.close()
 
     def setColorButton(self):
-        # 색 선택
-        # https://doc.qt.io/qt-5/stylesheet-examples.html
         button_size = int(background_w * 0.083)
         red_x = int(background_w*0.33)
         yellow_x = int(background_w*0.445)
@@ -107,7 +131,9 @@ class StickerWindow(QWidget):
 
     def setPenButton(self):
         #펜 선택
+        ## 수정 확인
         normal_x = int(background_w*0.478)
+        #normal_x = int(background_w*0.5648)
         marker_x = int(background_w*0.65)
         pen_y = int(background_h*0.92)
         pen_w, pen_h = int(background_w*0.075), int(background_h*0.091)
@@ -124,11 +150,28 @@ class StickerWindow(QWidget):
         self.normalPen.setGeometry(normal_x, pen_y, pen_w, pen_h)
         self.marker.setGeometry(marker_x, pen_y, pen_w, pen_h)
 
-        #self.normalPen.setStyleSheet("background-image:url(brush.png);background-color: rgba(0,0,0,0%);border-style: outset;")
         self.normalPen.setStyleSheet("background-color: rgba(0,0,0,0%);border-style: outset;")
         self.marker.setStyleSheet("background-color: rgba(0,0,0,0%);border-style: outset;")
 
     def setAnotherButton(self):
+        undo_x, undo_y = int(background_w * 0.07222), int(background_h * 0.7745)
+        undo_w, undo_h = int(background_w * 0.05556), int(background_h * 0.02059)
+        self.undoButton = QPushButton(self)
+        self.undoButton.setIcon(QIcon('./image/button_image/before.png'))
+        self.undoButton.setIconSize(QSize(undo_w, undo_h))
+        self.undoButton.clicked.connect(lambda: self.undoredoEvent('undo'))
+        self.undoButton.setGeometry(undo_x, undo_y, undo_w, undo_h)
+        self.undoButton.setStyleSheet("background-color: rgba(0,0,0,0%);border-style: outset;")
+
+        redo_x, redo_y = int(background_w * 0.2213), int(background_h * 0.7745)
+        redo_w, redo_h = int(background_w * 0.05556), int(background_h * 0.02059)
+        self.redoButton = QPushButton(self)
+        self.redoButton.setIcon(QIcon('./image/button_image/after.png'))
+        self.redoButton.setIconSize(QSize(undo_w, undo_h))
+        self.redoButton.clicked.connect(lambda: self.undoredoEvent('redo'))
+        self.redoButton.setGeometry(redo_x, redo_y, redo_w, redo_h)
+        self.redoButton.setStyleSheet("background-color: rgba(0,0,0,0%);border-style: outset;")
+
         save_x, save_y = int(background_w * 0.877), int(background_h * 0.77)
         save_w, save_h = int(background_w * 0.060), int(background_h * 0.0247)
         self.saveButton = QPushButton(self)
@@ -138,10 +181,19 @@ class StickerWindow(QWidget):
         self.saveButton.setGeometry(save_x, save_y, save_w, save_h)
         self.saveButton.setStyleSheet("background-color: rgba(0,0,0,0%);border-style: outset;")
 
-        self.slider = QSlider(Qt.Vertical, self)
-        self.slider.setGeometry(int(background_w*0.037),int(background_h*0.3458),int(background_w*0.0324),int(background_h*0.2625))
-        self.slider.setRange(3, 20)
-        self.slider.valueChanged[int].connect(self.changeBrush_size)
+        self.penSlider = QSlider(Qt.Horizontal, self)
+        self.penSlider.setGeometry(int(background_w * 0.33), int(background_h * 0.9484), int(background_h * 0.3), int(background_w * 0.0324))
+        self.penSlider.setRange(3, 20)
+        self.penSlider.valueChanged[int].connect(self.changeBrush_size)
+        self.penSlider.setStyleSheet(style1)
+
+        self.stickerSlider = QSlider(Qt.Vertical, self)
+        self.stickerSlider.setGeometry(int(background_w * 0.037), int(background_h * 0.3458), int(background_w * 0.0324), int(background_h * 0.2625))
+        self.stickerSlider.setRange(int((background_w*0.2)/2), int((background_w*0.2)*2))
+        self.stickerSlider.valueChanged[int].connect(self.changeSticker_size)
+        self.stickerSlider.setStyleSheet(style2)
+        self.stickerSlider.setVisible(False)
+
 
         sticker_x, sticker_y = int(background_w * 0.03148), int(background_h * 0.8526)
         sticker_w, sticker_h = int(background_w * 0.139), int(background_h * 0.109)
@@ -151,6 +203,25 @@ class StickerWindow(QWidget):
         self.stickerButton.setGeometry(sticker_x, sticker_y, sticker_w, sticker_h)
         self.stickerButton.setStyleSheet("background-color: rgba(0,0,0,0%);border-style: outset;")
         self.stickerButton.clicked.connect(lambda: self.setSticker(True))
+
+        self.popup = QPushButton(self)
+        self.popup.setIcon(QIcon('./image/background_image/popup.png'))
+        self.popup.setIconSize(QSize(int(background_w * 0.5713), int(background_h * 0.05886)))
+        self.popup.setGeometry(int(background_w * 0.23055), int(background_h * 0.44114), int(background_w * 0.5713),
+                               int(background_h * 0.05886))
+        self.popup.setStyleSheet("background-color: rgba(0,0,0,0%);border-style: outset;")
+        self.popup.clicked.connect(self.popupEvent)
+        self.popup.setVisible(False)
+
+        # 공유 버튼
+        share_x, share_y = int(background_w * 0.762), int(background_h * 0.17552)
+        share_w, share_h = int(background_w * 0.05146), int(background_h * 0.0328)
+        self.shareButton = QPushButton(self)
+        self.shareButton.setIcon(QIcon('./image/button_image/share.png'))
+        self.shareButton.setIconSize(QSize(share_w, share_h))
+        self.shareButton.clicked.connect(self.sharePressEvent)
+        self.shareButton.setGeometry(share_x, share_y, share_w, share_h)
+        self.shareButton.setStyleSheet("background-color: rgba(0,0,0,0%);border-style: outset;")
 
         sticker_x, sticker_y = int(background_w * 0.03148), int(background_h * 0.848)
         sticker_w, sticker_h = int(background_w * 0.139), int(background_h * 0.127)
@@ -170,16 +241,19 @@ class StickerWindow(QWidget):
 
     def setStickerEvent(self, path_num):
         self.stickerEvent = True
-        self.veiwImage = QPixmap(self.file_path[path_num]).scaled(
-            QSize(int(background_w*0.2), int(background_h*0.137)))
+        self.viewImage_path = self.file_path[path_num]
 
 
     def setSticker(self, set):
         if set:
+            self.stickerSlider.setVisible(True)
+            self.penSlider.setVisible(False)
             self.stickerButton.setVisible(False)
             self.drawButton.setVisible(True)
             self.scrollarea.setVisible(True)
         else:
+            self.stickerSlider.setVisible(False)
+            self.penSlider.setVisible(True)
             self.stickerEvent = False
             self.drawing = True
             self.stickerButton.setVisible(True)
@@ -217,6 +291,8 @@ class StickerWindow(QWidget):
     def changeBrush_size(self, size):
         self.brush_size = size
 
+    def changeSticker_size(self, size):
+        self.sticker_size = size
 
     def changeColor(self, button):
         if button == self.colorButton_red:
@@ -236,40 +312,100 @@ class StickerWindow(QWidget):
             self.brush_alpha = 50
         self.brush_color = QColor(self.r, self.g, self.b, self.brush_alpha)
 
-    def paintEvent(self, e):
-        canvas = QPainter(self)
-
-        canvas.drawImage(self.image_x, self.image_y, self.image, self.image_x, self.image_y, self.image_w, self.image_h)
-
     def mousePressEvent(self, e):
         if (e.button() == Qt.LeftButton) & (self.stickerEvent is False):
+            self.undo.append(self.imageLabel.pixmap().toImage())
+            self.redo = []
+            self.undoButton.setEnabled(True)
+            self.redoButton.setEnabled(False)
             self.drawing = True
-            self.last_point = e.pos()
+            self.last_point = QPoint(e.x(), e.y()-self.image_y)
         else:
-            stickerImage = QPainter(self.image)
-            stickerImage.drawPixmap(e.x()*0.85, e.y()*0.85, QPixmap(self.veiwImage))
+            self.viewImage = QPixmap(self.viewImage_path).scaledToWidth(self.sticker_size)
+            self.sticker_ex.resize(QSize(self.viewImage.size()))
+            self.sticker_ex.setPixmap(QPixmap(self.viewImage))
+            self.sticker_ex.move(e.x()-(self.viewImage.width()/2), e.y()-(self.viewImage.height()/2))
+
+    def mouseDoubleClickEvent(self, e):
+        if (e.button() == Qt.LeftButton) & (self.stickerEvent):
+            self.undo.append(self.imageLabel.pixmap().toImage())
+            self.redo = []
+            self.undoButton.setEnabled(True)
+            self.redoButton.setEnabled(False)
+            self.sticker_ex.clear()
+            stickerImage = QPainter(self.imageLabel.pixmap())
+            stickerImage.drawPixmap(e.x()-(self.viewImage.width()/2), e.y()-(self.viewImage.height()/2)-self.image_y, QPixmap(self.viewImage))
             self.update()
-
-
 
     def mouseMoveEvent(self, e):
         if (e.buttons() & Qt.LeftButton) & self.drawing:
-            painter = QPainter(self.image)
+            painter = QPainter(self.imageLabel.pixmap())
             painter.setPen(QPen(self.brush_color, self.brush_size, Qt.SolidLine, Qt.RoundCap))
-            painter.drawLine(self.last_point, e.pos())
-            self.last_point = e.pos()
+            painter.drawLine(self.last_point, QPoint(e.x(), e.y()-self.image_y))
+            self.last_point = QPoint(e.x(), e.y()-self.image_y)
             self.update()
 
     def mouseReleaseEvent(self, e):
         if e.button() == Qt.LeftButton:
             self.drawing = False
 
+    def undoredoEvent(self, str):
+        now = self.imageLabel.pixmap().toImage()
+        self.imageLabel.clear()
+        self.imageLabel.setPixmap(QPixmap(self.piximage))
+        self.imageLabel.lower()
+        self.mainLabel.lower()
+        if str == 'undo' and self.undo:
+            self.redo.append(now)
+            pix = QPixmap.fromImage(self.undo[-1])
+            hist = QPainter(self.imageLabel.pixmap())
+            hist.drawPixmap(self.image_x, 0, pix)
+            hist.end()
+            self.update()
+            del self.undo[-1]
+            if not self.undo:
+                self.undoButton.setEnabled(False)
+            if self.redo:
+                self.redoButton.setEnabled(True)
+        elif str == 'redo' and self.redo:
+            self.undoButton.setEnabled(True)
+            self.undo.append(now)
+            pix = QPixmap.fromImage(self.redo[-1])
+            hist = QPainter(self.imageLabel.pixmap())
+            hist.drawPixmap(self.image_x, 0, pix)
+            hist.end()
+            self.update()
+            print(len(self.redo))
+            del self.redo[-1]
+            if not self.redo:
+                self.redoButton.setEnabled(False)
+
+
     def saveResult(self):
-        fpath, _ = QFileDialog.getSaveFileName(self, 'Save Image', '', "PNG(*.png);;JPEG(*.jpg *.jpeg);;All Files(*.*)")
+        fpath, _ = QFileDialog.getSaveFileName(self, 'Save Image', './image/sticker_image/', "PNG(*.png);;JPEG(*.jpg *.jpeg);;All Files(*.*)")
 
         if fpath:
-            self.image.save(fpath)
-            QMessageBox.about(
-                self, 'Message', 'Sticker has been saved :)'
-            )
+            self.imageLabel.pixmap().toImage().save(fpath)
+            self.popup.setIcon(QIcon('./image/background_image/popup.png'))
+            self.popup.setVisible(True)
 
+    def sharePressEvent(self):
+        fpath = 'temporary_s.png'
+        with open('./email.txt', 'r') as f:
+            to_email = f.readline()
+            f.close()
+        self.saveimg = QImage(self.imageLabel.pixmap().toImage())
+        if fpath:
+            self.saveimg.save(fpath)
+            # 이메일로 이미지 전송 thread
+            self.th = email_send.emailTread(to_email, fpath)
+            self.th.start()
+
+            self.popup.setIcon(QIcon('./image/background_image/popup.png'))
+            self.popup.setVisible(True)
+            # QMessageBox.about(
+            #     self, 'Message', '이미지가 공유되었습니다!'
+            # )
+
+    def popupEvent(self):
+        self.popup.setVisible(False)

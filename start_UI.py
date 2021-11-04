@@ -10,32 +10,100 @@ import learn
 import video
 import background
 
-class StartWindow(QtWidgets.QMainWindow):
+
+class StartWindow(QMainWindow):
     def __init__(self):
         super().__init__()
-        self.startImage = QImage('./image/background_image/start_image.png')
-        self.startImage = self.startImage.scaled(QSize(background_w, background_h))
-        palette = QPalette()
-        palette.setBrush(10, QBrush(self.startImage))
 
-        self.setPalette(palette)
+        self.mainLabel = QLabel(self)
+        self.mainLabel.resize(QSize(background_w, background_h))
+        self.startImage = QPixmap('./image/background_image/start_image.png')
+        self.startImage = self.startImage.scaled(QSize(background_w, background_h))
+        self.mainLabel.setPixmap(self.startImage)
+
+        self.setFixedSize(background_w, background_h)
         self.setWindowTitle('이리오너라')
         self.setGeometry(0, 0, background_w, background_h)
 
-        self._first_window = FirstWindow()
+        self._email_window = emailWindow()
 
+        timer = QTimer(self)
+        timer.timeout.connect(self.timeEvent)
+        timer.start(3000)
+
+    def timeEvent(self):
+        self.setCentralWidget(self._email_window)
     def mousePressEvent(self, e):
         if e.button() == Qt.LeftButton:
-            self.close()
-            self._first_window.show()
+            self.setCentralWidget(self._email_window)
+            # self._first_window.setVisible(True)
 
-class FirstWindow(QtWidgets.QMainWindow):
+class emailWindow(QMainWindow):
     def __init__(self):
         super().__init__()
-        self.startImage = QImage('./image/background_image/background2.png')
+        self.mainLabel = QLabel(self)
+        self.mainLabel.resize(QSize(background_w, background_h))
+
+        self.startImage = QPixmap('./image/background_image/background2.png')
         self.startImage = self.startImage.scaled(QSize(background_w, background_h))
-        palette = QPalette()
-        palette.setBrush(10, QBrush(self.startImage))
+        self.mainLabel.setPixmap(self.startImage)
+        # palette = QPalette()
+        # palette.setBrush(10, QBrush(self.startImage))
+
+        self.emailEdit = QLineEdit(self)
+        self.emailEdit.setPlaceholderText("enter your e-mail")
+        rx = QRegularExpression("\\b[A-Z0-9._%+-]+@[A-Z0-9.-]+\\.[A-Z]{2,4}\\b",QRegularExpression.CaseInsensitiveOption)
+        self.emailEdit.setValidator(QRegularExpressionValidator(rx,self))
+        self.emailEdit.textChanged.connect(self.setText)
+        self.emailEdit.move(int(background_w * 0.23), int(background_h * 0.419))
+
+        button_w = int(background_w * 0.23)
+        button_y = int(background_h * 0.05)
+        self.ok_button = QPushButton(self)
+        self.ok_button.setIcon(QIcon('./image/button_image/making1.png'))
+        self.ok_button.setIconSize(QSize(button_w, button_y))
+        self.ok_button.setStyleSheet("background-color: rgba(0,0,0,0%);border-style: outset;")
+        self.ok_button.setGeometry(int(background_w * 0.23), int(background_h * 0.7), button_w, button_y)
+
+        self.ok_button.clicked.connect(self.okEvent)
+
+        # button_w = int(background_w * 0.295)
+        # button_y = int(background_h * 0.05)
+        # self.no_button = QPushButton(self)
+        # self.no_button.setIcon(QIcon('./image/button_image/learning1.png'))
+        # self.no_button.setIconSize(QSize(button_w, button_y))
+        # self.no_button.setStyleSheet("background-color: rgba(0,0,0,0%);border-style: outset;")
+        # self.no_button.setGeometry(int(background_w * 0.48), int(background_h * 0.7), button_w, button_y)
+        #
+        # self.no_button.clicked.connect(lambda: self.buttonPressEvent('learn'))
+
+        self._first_window = FirstWindow()
+
+    def setText(self):
+        if self.emailEdit.hasAcceptableInput():
+            self.emailEdit.setStyleSheet("QLineEdit { color: black;}");
+        else:
+            self.emailEdit.setStyleSheet("QLineEdit { color: red;}");
+
+    def okEvent(self):
+        if self.emailEdit.hasAcceptableInput():
+            with open('./email.txt', 'w') as f:
+                f.write(self.emailEdit.text())
+                f.close()
+            self.setCentralWidget(self._first_window)
+
+
+class FirstWindow(QMainWindow):
+    def __init__(self):
+        super().__init__()
+        self.mainLabel = QLabel(self)
+        self.mainLabel.resize(QSize(background_w, background_h))
+
+        self.startImage = QPixmap('./image/background_image/background2.png')
+        self.startImage = self.startImage.scaled(QSize(background_w, background_h))
+        self.mainLabel.setPixmap(self.startImage)
+        # palette = QPalette()
+        # palette.setBrush(10, QBrush(self.startImage))
 
         button_w = int(background_w * 0.23)
         button_y = int(background_h * 0.17)
@@ -57,9 +125,9 @@ class FirstWindow(QtWidgets.QMainWindow):
 
         self.lean_button.clicked.connect(lambda: self.buttonPressEvent('learn'))
 
-        self.setPalette(palette)
-        self.setWindowTitle('이리오너라')
-        self.setGeometry(0, 0, background_w, background_h)
+        # self.setPalette(palette)
+        # self.setWindowTitle('이리오너라')
+        # self.setGeometry(0, 0, background_w, background_h)
 
         self._make_window = None
         self._learn_window = None
@@ -68,20 +136,27 @@ class FirstWindow(QtWidgets.QMainWindow):
         if button == 'make':
             if self._make_window is None:
                 self._make_window = MakeWindow()
-            self._make_window.show()
+            # self._make_window.show()
+            self.setCentralWidget(self._make_window)
         elif button == 'learn':
             if self._learn_window is None:
-                self._learn_window = learn.LearnWindow()
-            self._learn_window.show()
-        self.close()
+                self._learn_window = learn.LearnWindow1()
+            # self._learn_window.show()
+            self.setCentralWidget(self._learn_window)
+        self.mainLabel.setVisible(False)
+        # self.hide()
 
-class MakeWindow(QtWidgets.QMainWindow):
+class MakeWindow(QMainWindow):
     def __init__(self):
         super().__init__()
-        self.startImage = QImage('./image/background_image/background2.png')
+        self.mainLabel = QLabel(self)
+        self.mainLabel.resize(QSize(background_w, background_h))
+
+        self.startImage = QPixmap('./image/background_image/background3.png')
         self.startImage = self.startImage.scaled(QSize(background_w, background_h))
-        palette = QPalette()
-        palette.setBrush(10, QBrush(self.startImage))
+        self.mainLabel.setPixmap(self.startImage)
+        # palette = QPalette()
+        # palette.setBrush(10, QBrush(self.startImage))
 
 
         button_w = int(background_w * 0.68)
@@ -112,29 +187,50 @@ class MakeWindow(QtWidgets.QMainWindow):
         self.select3.setGeometry(button_x, button_y, button_w, button_h)
         self.select3.clicked.connect(lambda: self.buttonPressEvent(3))
 
+        self.back = QPushButton(self)
+        self.back.setIcon(QIcon('./image/button_image/back.png'))
+        self.back.setIconSize(QSize(int(background_w * 0.0259), int(background_h * 0.026)))
+        self.back.setStyleSheet("background-color: rgba(0,0,0,0%);border-style: outset;")
+        self.back.setGeometry(int(background_w * 0.0925), int(background_h * 0.179), int(background_w * 0.0259),
+                              int(background_h * 0.026))
+        self.back.clicked.connect(self.backPressEvent)
 
-        self.setPalette(palette)
-        self.setWindowTitle('이리오너라')
-        self.setGeometry(0, 0, background_w, background_h)
+
+        # self.setPalette(palette)
+        # self.setWindowTitle('이리오너라')
+        # self.setGeometry(0, 0, background_w, background_h)
 
         self._sticker_window = None
         self._video_window = None
         self._background_window = None
+        self._back_window = None
 
     def buttonPressEvent(self, select):
         if select == 1:
             if self._video_window is None:
                 self._video_window = video.VideoWindow()
-            self._video_window.show()
+            # self._video_window.show()
+            self.setCentralWidget(self._video_window)
         elif select == 2:
             if self._background_window is None:
                 self._background_window = background.BackWindow()
-            self._background_window.show()
+            # self._background_window.show()
+            self.setCentralWidget(self._background_window)
         elif select == 3:
             if self._sticker_window is None:
                 self._sticker_window = sticker.StickerWindow()
-            self._sticker_window.show()
-        self.close()
+            # self._sticker_window.show()
+            self.setCentralWidget(self._sticker_window)
+        self.mainLabel.setVisible(False)
+        # self.hide()
+
+    def backPressEvent(self):
+        if self._back_window is None:
+            self._back_window = FirstWindow()
+        # self._back_window.show()
+        self.setCentralWidget(self._back_window)
+        self.mainLabel.setVisible(False)
+        # self.close()
 
 
 

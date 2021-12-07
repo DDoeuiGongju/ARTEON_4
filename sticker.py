@@ -3,6 +3,7 @@ from PyQt5.QtGui import *
 from PyQt5.QtCore import *
 
 import os
+import numpy as np
 
 from base_value import background_w, background_h, style1, style2
 import start_UI
@@ -28,12 +29,26 @@ class StickerWindow(QMainWindow):
         upperImage = QPixmap('./image/background_image/upper.png').scaled(QSize(background_w, int(background_h*0.168)))
         self.upperLabel.setPixmap(QPixmap(upperImage))
 
-        self.anotherLabel = QLabel(self)
-        self.anotherLabel.resize(QSize(int(background_w * 0.06481), int(background_w * 0.06481)))
-        upperImage = QPixmap('./image/button_image/another4.png').scaled(
-            QSize(int(background_w * 0.06481), int(background_w * 0.06481)))
-        self.anotherLabel.setPixmap(QPixmap(upperImage))
-        self.anotherLabel.move(int(background_w * 0.84444), int(background_h * 0.17447))
+
+        self.manualWindow = QLabel(self)
+        self.manualWindow.resize(QSize(background_w, background_h))
+
+        # self.anotherLabel = QLabel(self)
+        # self.anotherLabel.resize(QSize(int(background_w * 0.06481), int(background_w * 0.06481)))
+        # upperImage = QPixmap('./image/button_image/another4.png').scaled(
+        #     QSize(int(background_w * 0.06481), int(background_w * 0.06481)))
+        # self.anotherLabel.setPixmap(QPixmap(upperImage))
+        # self.anotherLabel.move(int(background_w * 0.84444), int(background_h * 0.17447))
+
+        # 사용법 버튼
+        self.manual = True
+        self.manualButton = QPushButton(self)
+        self.manualButton.setIcon(QIcon('./image/button_image/manual.png'))
+        self.manualButton.setIconSize(QSize(int(background_w * 0.093518), int(background_h * 0.053645)))
+        self.manualButton.clicked.connect(self.manualEvent)
+        self.manualButton.setGeometry(int(background_w * 0.84166), int(background_h * 0.17135)
+                                      , int(background_w * 0.093518), int(background_h * 0.053645))
+        self.manualButton.setStyleSheet("background-color: rgba(0,0,0,0%);border-style: outset;")
 
         # 뒤로가기 버튼
         self._back_window = None
@@ -72,9 +87,7 @@ class StickerWindow(QMainWindow):
 
         # 스티커 그룹
         self.stickerEvent = False
-        self.btnGroup = QButtonGroup()
-        self.btnGroup.setExclusive(False)
-        self.btnGroup.buttonClicked[int].connect(self.setStickerEvent)
+
         self.file_path = []
 
         # 실행취소/다시실행 buffer
@@ -89,9 +102,7 @@ class StickerWindow(QMainWindow):
     def backPressEvent(self):
         if self._back_window is None:
             self._back_window = start_UI.MakeWindow()
-        # self._back_window.show()
         self.setCentralWidget(self._back_window)
-        # self.close()
 
     def setColorButton(self):
         button_size = int(background_w * 0.083)
@@ -188,24 +199,38 @@ class StickerWindow(QMainWindow):
         self.penSlider.setStyleSheet(style1)
 
         self.stickerSlider = QSlider(Qt.Vertical, self)
-        self.stickerSlider.setGeometry(int(background_w * 0.037), int(background_h * 0.3458), int(background_w * 0.0324), int(background_h * 0.2625))
-        self.stickerSlider.setRange(int((background_w*0.2)/2), int((background_w*0.2)*2))
+        self.stickerSlider.setGeometry(int(background_w * 0.06), int(background_h * 0.3458),
+                                       int(background_w * 0.0324), int(background_h * 0.3328))
+        self.stickerSlider.setRange(int((background_w*0.2)/2), int((background_w*0.2)*4))
         self.stickerSlider.valueChanged[int].connect(self.changeSticker_size)
         self.stickerSlider.setStyleSheet(style2)
         self.stickerSlider.setVisible(False)
 
 
-        sticker_x, sticker_y = int(background_w * 0.03148), int(background_h * 0.8526)
-        sticker_w, sticker_h = int(background_w * 0.139), int(background_h * 0.109)
+
+
+        # sticker_x, sticker_y = int(background_w * 0.03148), int(background_h * 0.8526)
+        # sticker_w, sticker_h = int(background_w * 0.139), int(background_h * 0.109)
+        # self.stickerButton = QPushButton(self)
+        # self.stickerButton.setIcon(QIcon('./image/button_image/sticker.png'))
+        # self.stickerButton.setIconSize(QSize(sticker_w, sticker_h))
+        # self.stickerButton.setGeometry(sticker_x, sticker_y, sticker_w, sticker_h)
+        # self.stickerButton.setStyleSheet("background-color: rgba(0,0,0,0%);border-style: outset;")
+        # self.stickerButton.clicked.connect(lambda: self.setSticker(True))
+
+        # 스티커 스크롤 오픈 버튼
+        self.sticker = True # 스티커 스크롤 오픈 버튼이 눌리면
+        sticker_x, sticker_y = int(background_w * 0.875), int(background_h * 0.4724)
+        sticker_w, sticker_h = int(background_w * 0.0648), int(background_w * 0.0648)
         self.stickerButton = QPushButton(self)
-        self.stickerButton.setIcon(QIcon('./image/button_image/sticker.png'))
+        self.stickerButton.setIcon(QIcon('./image/button_image/addsticker.png'))
         self.stickerButton.setIconSize(QSize(sticker_w, sticker_h))
         self.stickerButton.setGeometry(sticker_x, sticker_y, sticker_w, sticker_h)
         self.stickerButton.setStyleSheet("background-color: rgba(0,0,0,0%);border-style: outset;")
-        self.stickerButton.clicked.connect(lambda: self.setSticker(True))
+        self.stickerButton.clicked.connect(lambda: self.setSticker(self.sticker))
 
         self.popup = QPushButton(self)
-        self.popup.setIcon(QIcon('./image/background_image/popup.png'))
+        self.popup.setIcon(QIcon('./image/background_image/share_popup.png'))
         self.popup.setIconSize(QSize(int(background_w * 0.5713), int(background_h * 0.05886)))
         self.popup.setGeometry(int(background_w * 0.23055), int(background_h * 0.44114), int(background_w * 0.5713),
                                int(background_h * 0.05886))
@@ -230,14 +255,45 @@ class StickerWindow(QMainWindow):
         self.drawButton.setIconSize(QSize(sticker_w, sticker_h))
         self.drawButton.setGeometry(sticker_x, sticker_y, sticker_w, sticker_h)
         self.drawButton.setStyleSheet("background-color: rgba(0,0,0,0%);border-style: outset;")
-        self.drawButton.clicked.connect(lambda: self.setSticker(False))
-        self.drawButton.setVisible(False)
+        # self.drawButton.clicked.connect(lambda: self.setSticker(False))
+        self.drawButton.setVisible(True)
 
-        self.layer_xywh = QRect(int(background_w * 0.205), int(background_h * 0.83),
-                                int(background_w * 0.795), int(background_h * 0.171))
-        self.createLayout_Container()
+        # self.layer_xywh = QRect(int(background_w * 0.205), int(background_h * 0.83),
+        #                         int(background_w * 0.795), int(background_h * 0.171))
+        self.layer_xywh = QRect(0, int(background_h * 0.83),
+                                background_w, int(background_h * 0.171))
+        self.scrollarea = QScrollArea(self)
+        self.scrollarea.setStyleSheet('background-color: #FFFFFF;')
+        self.scrollarea.setGeometry(self.layer_xywh)
+        self.scrollarea.setWidgetResizable(True)
+        self.scrollarea.setWidget(self.createLayout_group())
         self.scrollarea.setVisible(False)
 
+        self._home_window = None
+        self.homeButton = QPushButton(self)
+        self.homeButton.setIcon(QIcon('./image/button_image/home.png'))
+        self.homeButton.setIconSize(QSize(int(background_w * 0.04629), int(background_h * 0.0282)))
+        self.homeButton.clicked.connect(self.goHome)
+        self.homeButton.setGeometry(int(background_w * 0.14722), int(background_h * 0.1776),
+                                    int(background_w * 0.04629), int(background_h * 0.0282))
+        self.homeButton.setStyleSheet("background-color: rgba(0,0,0,0%);border-style: outset;")
+
+    # 처음으로
+    def goHome(self):
+        if self._home_window is None:
+            self._home_window = start_UI.StartWindow()
+        self.setCentralWidget(self._home_window)
+
+    def manualEvent(self):
+        if self.manual:
+            image = QPixmap('./image/background_image/manual3.png').scaled(
+                QSize(background_w, background_h))
+            self.manualWindow.setPixmap(QPixmap(image))
+            self.manualWindow.setVisible(True)
+            self.manual = False
+        else:
+            self.manualWindow.setVisible(False)
+            self.manual = True
 
     def setStickerEvent(self, path_num):
         self.stickerEvent = True
@@ -248,25 +304,32 @@ class StickerWindow(QMainWindow):
         if set:
             self.stickerSlider.setVisible(True)
             self.penSlider.setVisible(False)
-            self.stickerButton.setVisible(False)
-            self.drawButton.setVisible(True)
+            # self.stickerButton.setVisible(False)
+            # self.drawButton.setVisible(True)
             self.scrollarea.setVisible(True)
+            self.sticker = False
         else:
             self.stickerSlider.setVisible(False)
             self.penSlider.setVisible(True)
             self.stickerEvent = False
             self.drawing = True
-            self.stickerButton.setVisible(True)
-            self.drawButton.setVisible(False)
+            # self.stickerButton.setVisible(True)
+            # self.drawButton.setVisible(True)
             self.scrollarea.setVisible(False)
+            self.sticker = True
+
 
 
     def createLayout_group(self):
+        self.btnGroup = QButtonGroup()
+        self.btnGroup.setExclusive(False)
+        self.btnGroup.buttonClicked[int].connect(self.setStickerEvent)
         sgroupbox = QGroupBox(self)
         stickerView_w, stickerView_h = int(background_w*0.2), int(background_h*0.137)
 
         layout_groupbox = QHBoxLayout(sgroupbox)
         layout_groupbox.setContentsMargins(0,0,0,0)
+        self.file_path=[]
 
         file_list = os.listdir('./image/sticker_image/')
         for i in range(len(file_list)):
@@ -277,16 +340,7 @@ class StickerWindow(QMainWindow):
             button.setStyleSheet("background-color: rgba(0,0,0,0%);border-style: outset;")
             self.btnGroup.addButton(button, i)
             layout_groupbox.addWidget(button)
-
         return sgroupbox
-
-    def createLayout_Container(self):
-        self.scrollarea = QScrollArea(self)
-        self.scrollarea.setStyleSheet('background-color: #FFFFFF;')
-        self.scrollarea.setGeometry(self.layer_xywh)
-        self.scrollarea.setWidgetResizable(True)
-        self.scrollarea.setWidget(self.createLayout_group())
-
 
     def changeBrush_size(self, size):
         self.brush_size = size
@@ -375,25 +429,30 @@ class StickerWindow(QMainWindow):
             hist.drawPixmap(self.image_x, 0, pix)
             hist.end()
             self.update()
-            print(len(self.redo))
+            # print(len(self.redo))
             del self.redo[-1]
             if not self.redo:
                 self.redoButton.setEnabled(False)
 
 
     def saveResult(self):
-        fpath, _ = QFileDialog.getSaveFileName(self, 'Save Image', './image/sticker_image/', "PNG(*.png);;JPEG(*.jpg *.jpeg);;All Files(*.*)")
-
+        # fpath, _ = QFileDialog.getSaveFileName(self, 'Save Image', './image/sticker_image/', "PNG(*.png);;JPEG(*.jpg *.jpeg);;All Files(*.*)")
+        fpath = './image/sticker_image/%f.png'%np.random.rand(1)
         if fpath:
             self.imageLabel.pixmap().toImage().save(fpath)
-            self.popup.setIcon(QIcon('./image/background_image/popup.png'))
+            self.popup.setIcon(QIcon('./image/background_image/sticker_popup.png'))
             self.popup.setVisible(True)
+            with open('./remove.txt', 'a') as f:
+                f.write(fpath+'\n')
+        self.scrollarea.setWidget(self.createLayout_group())
 
     def sharePressEvent(self):
         fpath = 'temporary_s.png'
+        with open('./remove.txt', 'a') as f:
+            f.write(fpath + '\n')
         with open('./email.txt', 'r') as f:
             to_email = f.readline()
-            f.close()
+
         self.saveimg = QImage(self.imageLabel.pixmap().toImage())
         if fpath:
             self.saveimg.save(fpath)
@@ -401,11 +460,9 @@ class StickerWindow(QMainWindow):
             self.th = email_send.emailTread(to_email, fpath)
             self.th.start()
 
-            self.popup.setIcon(QIcon('./image/background_image/popup.png'))
+            self.popup.setIcon(QIcon('./image/background_image/share_popup.png'))
             self.popup.setVisible(True)
-            # QMessageBox.about(
-            #     self, 'Message', '이미지가 공유되었습니다!'
-            # )
+
 
     def popupEvent(self):
         self.popup.setVisible(False)

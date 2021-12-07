@@ -34,6 +34,15 @@ class LearnWindow1(QMainWindow):
         self.back.setGeometry(int(background_w * 0.0925), int(background_h * 0.179), int(background_w*0.0259),int(background_h*0.026))
         self.back.clicked.connect(self.backPressEvent)
 
+        self._home_window = None
+        self.homeButton = QPushButton(self)
+        self.homeButton.setIcon(QIcon('./image/button_image/home.png'))
+        self.homeButton.setIconSize(QSize(int(background_w * 0.04629), int(background_h * 0.0282)))
+        self.homeButton.clicked.connect(self.goHome)
+        self.homeButton.setGeometry(int(background_w * 0.14722), int(background_h * 0.1776),
+                                    int(background_w * 0.04629), int(background_h * 0.0282))
+        self.homeButton.setStyleSheet("background-color: rgba(0,0,0,0%);border-style: outset;")
+
         self.veiw = QLabel(self)
         self.veiw.resize(QSize(int(background_w * 0.749), int(background_h * 0.661)))
         self.veiw.move(int(background_w * 0.1259), int(background_h * 0.2354))
@@ -47,6 +56,12 @@ class LearnWindow1(QMainWindow):
 
         self._explain_window = None
         self.explain_path = None
+
+    # 처음으로
+    def goHome(self):
+        if self._home_window is None:
+            self._home_window = start_UI.StartWindow()
+        self.setCentralWidget(self._home_window)
 
 
     def selectImageButton(self):
@@ -97,9 +112,6 @@ class LearnWindow1(QMainWindow):
             self._back_window = start_UI.FirstWindow()
         # self._back_window.show()
         self.setCentralWidget(self._back_window)
-        self.mainLabel.setVisible(False)
-        # self.close()
-
 
 
 class LearnWindow2(QMainWindow):
@@ -129,13 +141,22 @@ class LearnWindow2(QMainWindow):
         self.back.clicked.connect(self.backPressEvent)
 
         self.popup = QPushButton(self)
-        self.popup.setIcon(QIcon('./image/background_image/popup.png'))
+        self.popup.setIcon(QIcon('./image/background_image/share_popup.png'))
         self.popup.setIconSize(QSize(int(background_w * 0.5713), int(background_h * 0.05886)))
         self.popup.setGeometry(int(background_w * 0.23055), int(background_h * 0.44114), int(background_w * 0.5713),
                                int(background_h * 0.05886))
         self.popup.setStyleSheet("background-color: rgba(0,0,0,0%);border-style: outset;")
         self.popup.clicked.connect(self.popupEvent)
         self.popup.setVisible(False)
+
+        self._home_window = None
+        self.homeButton = QPushButton(self)
+        self.homeButton.setIcon(QIcon('./image/button_image/home.png'))
+        self.homeButton.setIconSize(QSize(int(background_w * 0.04629), int(background_h * 0.0282)))
+        self.homeButton.clicked.connect(self.goHome)
+        self.homeButton.setGeometry(int(background_w * 0.14722), int(background_h * 0.1776),
+                                    int(background_w * 0.04629), int(background_h * 0.0282))
+        self.homeButton.setStyleSheet("background-color: rgba(0,0,0,0%);border-style: outset;")
 
         self.veiw = QLabel(self)
         self.veiw.resize(QSize(int(background_w * 0.749), int(background_h * 0.661)))
@@ -147,13 +168,13 @@ class LearnWindow2(QMainWindow):
 
         self.buttonPressEvent()
 
-        # self.setPalette(self.palette)
-        # self.setWindowTitle('이리오너라')
-        # self.setGeometry(0, 0, background_w, background_h)
-
+    # 처음으로
+    def goHome(self):
+        if self._home_window is None:
+            self._home_window = start_UI.StartWindow()
+        self.setCentralWidget(self._home_window)
 
     def buttonPressEvent(self):
-        print(self.explain_path)
         # self.image_path = './image/learning_image/이미지/' + self.explain_path[:-3] + 'jpg'
         self.image_path = self.explain_path[:-3] + 'jpg'
 
@@ -179,10 +200,7 @@ class LearnWindow2(QMainWindow):
     def backPressEvent(self):
         if self._back_window is None:
             self._back_window = LearnWindow1()
-        # self._back_window.show()
         self.setCentralWidget(self._back_window)
-        self.mainLabel.setVisible(False)
-        # self.close()
 
     def buttonDoubleClick(self):
         self._image_window = ImageViewerWindow(self.image_path)
@@ -192,23 +210,19 @@ class LearnWindow2(QMainWindow):
     def savePressEvent(self, image_path):
         # fpath, _ = QFileDialog.getSaveFileName(self, 'Save Image', './', "PNG(*.png);;JPEG(*.jpg *.jpeg);;All Files(*.*)")
         fpath = 'temporary.png'
+        with open('./remove.txt', 'a') as f:
+            f.write(fpath + '\n')
         with open('./email.txt', 'r') as f:
             to_email = f.readline()
-            f.close()
-        print(to_email)
         self.saveimg = QImage(image_path)
         if fpath:
             self.saveimg.save(fpath)
             # 이메일로 이미지 전송 thread
             self.th = email_send.emailTread(to_email, fpath)
             self.th.start()
-
-            self.popup.setIcon(QIcon('./image/background_image/popup.png'))
             self.popup.setVisible(True)
-            # m = QMessageBox()
-            # m.about(
-            #     self, 'Message', '이미지가 공유되었습니다!'
-            # )
+            self.popup.raise_()
+
 
     def popupEvent(self):
         self.popup.setVisible(False)
@@ -329,9 +343,7 @@ class ImageViewerWindow(QMainWindow):
     def backPressEvent(self):
         if self._back_window is None:
             self._back_window = LearnWindow2(self.explain_path)
-        # self._back_window.show()
         self.setCentralWidget(self._back_window)
-        # self.mainLabel.setVisible(False)
 
 
     def fitToWindow(self):

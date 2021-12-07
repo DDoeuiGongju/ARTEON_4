@@ -36,13 +36,6 @@ class VideoWindow(QMainWindow):
             QSize(background_w, int(background_h * 0.168)))
         self.upperLabel.setPixmap(QPixmap(upperImage))
 
-        # 따로 기능이 없는 이미지
-        self.anotherLabel = QLabel(self)
-        self.anotherLabel.resize(QSize(int(background_w * 0.1472), int(background_h * 0.03645)))
-        upperImage = QPixmap('./image/button_image/another.png').scaled(
-            QSize(int(background_w * 0.1472), int(background_h * 0.03645)))
-        self.anotherLabel.setPixmap(QPixmap(upperImage))
-        self.anotherLabel.move(int(background_w * 0.762), int(background_h * 0.17448))
 
         self.anotherLabel1 = QLabel(self)
         self.anotherLabel1.resize(QSize(int(background_w * 0.28055), int(background_h * 0.03385)))
@@ -51,13 +44,14 @@ class VideoWindow(QMainWindow):
         self.anotherLabel1.setPixmap(QPixmap(upperImage))
         self.anotherLabel1.move(int(background_w * 0.36019), int(background_h * 0.7671875))
 
-        self.anotherLabel2 = QLabel(self)
-        self.anotherLabel2.resize(QSize(int(background_w * 0.06481), int(background_w * 0.06481)))
-        upperImage = QPixmap('./image/button_image/another4.png').scaled(
-            QSize(int(background_w * 0.06481), int(background_w * 0.06481)))
-        self.anotherLabel2.setPixmap(QPixmap(upperImage))
-        self.anotherLabel2.move(int(background_w * 0.84444), int(background_h * 0.17447))
-        self.anotherLabel2.setVisible(False)
+
+        # self.anotherLabel2 = QLabel(self)
+        # self.anotherLabel2.resize(QSize(int(background_w * 0.06481), int(background_w * 0.06481)))
+        # upperImage = QPixmap('./image/button_image/another4.png').scaled(
+        #     QSize(int(background_w * 0.06481), int(background_w * 0.06481)))
+        # self.anotherLabel2.setPixmap(QPixmap(upperImage))
+        # self.anotherLabel2.move(int(background_w * 0.84444), int(background_h * 0.17447))
+        # self.anotherLabel2.setVisible(False)
 
         self.image_x = 0
         self.image_y = int(background_h * 0.0927)
@@ -78,15 +72,15 @@ class VideoWindow(QMainWindow):
         self.bodyLabel.setGeometry(self.image_x, self.image_y, self.image_w, self.image_h)
         self.body_file_path = []
 
-        self.textLabel = QLabel(self)
-        # self.textLabel.setAlignment(Qt.AlignCenter)
-        # self.font_ = self.textLabel.font()
-        # self.font_.setPointSize(50)
-        self.textLabel.setGeometry(int(background_w*0.4083), int(background_h*0.39375),
-                                   (background_w*18333), int(background_h*0.13386))
+        self.manualWindow = QLabel(self)
+        self.manualWindow.resize(QSize(background_w, background_h))
 
 
         self.video_thread = VideoThread()
+
+        self.video_thread.textLabel = QLabel(self)
+        self.video_thread.textLabel.setGeometry(int(background_w*0.4083), int(background_h*0.39375),
+                                   (background_w*18333), int(background_h*0.13386))
 
         self.programRun = False # 얼굴이나 몸을 선택한 상태인지
         self.mouse = False      # 스티커 마우스 이벤트를 위한 시그넝
@@ -108,10 +102,10 @@ class VideoWindow(QMainWindow):
         self.setScrollButton()
         self.setButton()
 
-        # self.setPalette(self.palette)
-        # self.setWindowTitle('이리오너라')
-        # self.setGeometry(0, 0, background_w, background_h)
-        # self.show()
+        self.video_thread.start()
+        self.video_thread.seg = False
+        self.video_thread.changePixmap.connect(self.setImage)
+
 
     def setScrollButton(self):
         self.layer_xywh = QRect(0, int(background_h * 0.8286), background_w, int(background_h * 0.1718))
@@ -229,14 +223,23 @@ class VideoWindow(QMainWindow):
         self.shareButton.clicked.connect(self.sharePressEvent)
         self.shareButton.setGeometry(share_x, share_y, share_w, share_h)
         self.shareButton.setStyleSheet("background-color: rgba(0,0,0,0%);border-style: outset;")
-        self.shareButton.setVisible(False)
+        # self.shareButton.setVisible(False)
+
+        # 사용법 버튼
+        self.manual = True
+        self.manualButton = QPushButton(self)
+        self.manualButton.setIcon(QIcon('./image/button_image/manual.png'))
+        self.manualButton.setIconSize(QSize(int(background_w * 0.093518), int(background_h * 0.053645)))
+        self.manualButton.clicked.connect(self.manualEvent)
+        self.manualButton.setGeometry(int(background_w * 0.84166), int(background_h * 0.17135)
+                                      ,int(background_w * 0.093518), int(background_h * 0.053645))
+        self.manualButton.setStyleSheet("background-color: rgba(0,0,0,0%);border-style: outset;")
 
         self.sticker = True
-
         self.stickerSlider = QSlider(Qt.Vertical, self)
-        self.stickerSlider.setGeometry(int(background_w * 0.037), int(background_h * 0.3458),
-                                       int(background_w * 0.0324), int(background_h * 0.2625))
-        self.stickerSlider.setRange(int((background_w * 0.2) / 2), int((background_w * 0.2) * 2))
+        self.stickerSlider.setGeometry(int(background_w * 0.06), int(background_h * 0.3458),
+                                       int(background_w * 0.0324), int(background_h * 0.3328))
+        self.stickerSlider.setRange(int((background_w * 0.2) / 2), int((background_w * 0.2) * 4))
         self.stickerSlider.valueChanged[int].connect(self.changeSticker_size)
         self.stickerSlider.setStyleSheet(style2)
         self.stickerSlider.setVisible(False)
@@ -252,7 +255,7 @@ class VideoWindow(QMainWindow):
         self.stickerButton.hide()
 
         self.popup = QPushButton(self)
-        self.popup.setIcon(QIcon('./image/background_image/popup.png'))
+        self.popup.setIcon(QIcon('./image/background_image/share_popup.png'))
         self.popup.setIconSize(QSize(int(background_w * 0.5713), int(background_h * 0.05886)))
         self.popup.setGeometry(int(background_w * 0.23055), int(background_h * 0.44114), int(background_w * 0.5713),
                                int(background_h * 0.05886))
@@ -260,27 +263,40 @@ class VideoWindow(QMainWindow):
         self.popup.clicked.connect(self.popupEvent)
         self.popup.setVisible(False)
 
+        self._home_window = None
+        self.homeButton = QPushButton(self)
+        self.homeButton.setIcon(QIcon('./image/button_image/home.png'))
+        self.homeButton.setIconSize(QSize(int(background_w * 0.04629), int(background_h * 0.0282)))
+        self.homeButton.clicked.connect(self.goHome)
+        self.homeButton.setGeometry(int(background_w * 0.14722), int(background_h * 0.1776),
+                                    int(background_w * 0.04629), int(background_h * 0.0282))
+        self.homeButton.setStyleSheet("background-color: rgba(0,0,0,0%);border-style: outset;")
+
+    # 처음으로
+    def goHome(self):
+        self.video_thread.seg = False
+        self.video_thread.stop()
+        if self._home_window is None:
+            self._home_window = start_UI.StartWindow()
+        self.setCentralWidget(self._home_window)
+
     # 뒤로가기
     def backPressEvent(self):
         self.video_thread.seg = False
-        self.video_thread.stop()
         if not self.programRun:
+            self.video_thread.stop()
             if self._back_window is None:
                 self._back_window = start_UI.MakeWindow()
-            # self._back_window.show()
             self.setCentralWidget(self._back_window)
-            # self.close()
         else:
+            if not self.video_thread.capture:
+                self.video_thread.start()
             self.saveButton.hide()
             self.sticker_scrollarea.setVisible(False)
             self.face_scrollarea.setVisible(False)
             self.body_scrollarea.setVisible(False)
-            # upperImage = QPixmap('./image/button_image/another.png').scaled(
-            #     QSize(int(background_w * 0.1472), int(background_h * 0.03645)))
-            # self.anotherLabel.setPixmap(QPixmap(upperImage))
-            self.anotherLabel.setVisible(True)
-            self.anotherLabel2.setVisible(False)
-            self.shareButton.setVisible(False)
+            self.manualWindow.setVisible(False)
+
             self.stickerButton.hide()
             self.undoButton.hide()
             self.redoButton.hide()
@@ -294,44 +310,66 @@ class VideoWindow(QMainWindow):
             self.sticker = True
             self.mouse = False
             self.before_num = None
-            self.now_run = True
+            self.now_run = False
 
-            self.label.clear()
             self.bodyLabel.clear()
             self.faceLabel.clear()
-            self.textLabel.setVisible(False)
+            self.video_thread.textLabel.setVisible(False)
 
-            self.label.hide()
+            self.undo = []
+            self.redo = []
+            self.label.show()
 
             face_group, self.face_file_path = self.createLayout_group('./image/face/썸네일/', self.face_btnGroup)
             self.face_scrollarea.setWidget(face_group)
             body_group, self.body_file_path = self.createLayout_group('./image/background/썸네일/', self.body_btnGroup)
             self.body_scrollarea.setWidget(body_group)
 
+    def manualEvent(self):
+        if self.manual:
+            if self.programRun:
+                image = QPixmap('./image/background_image/manual1.png').scaled(
+                    QSize(background_w, background_h))
+            else:
+                image = QPixmap('./image/background_image/manual2.png').scaled(
+                    QSize(background_w, background_h))
+            self.manualWindow.setPixmap(QPixmap(image))
+            self.manualWindow.setVisible(True)
+            self.manual = False
+        else:
+            self.manualWindow.setVisible(False)
+            self.manual = True
+
     # 사진찍기
     def setRun(self):
-        print(self.now_run)
-        if self.now_run:
-            self.video_thread.time_check = True
-            self.now_run = False
-        else:
-            self.video_thread.capture = True
-            self.video_thread.start()
-            self.now_run = True
+        # print(self.now_run)
+        if self.programRun:
+            if self.now_run:
+                self.video_thread.time_check = True
+                self.now_run = False
+            else:
+                self.video_thread.capture = True
+                self.video_thread.start()
+                self.now_run = True
 
     def saveResult(self):
         if self.video_thread.seg:
+            fpath = './image/sticker_image/%f.png' % np.random.rand(1)
             if self.body_back:
-                fpath, _ = QFileDialog.getSaveFileName(self, 'Save Image', './',
-                                                       "PNG(*.png);;JPEG(*.jpg *.jpeg);;All Files(*.*) ")
-                saveimg = self.bodyLabel.pixmap().toImage()
+                # fpath, _ = QFileDialog.getSaveFileName(self, 'Save Image', './image/sticker_image',
+                #                                        "PNG(*.png);;JPEG(*.jpg *.jpeg);;All Files(*.*) ")
+                saveimg = self.label.pixmap().toImage()
+                saveimg2 = self.bodyLabel.pixmap().toImage()
+                p = QPainter(saveimg)
+                p.drawImage(saveimg.rect(), saveimg2)
+                p.end()
             else:
-                fpath, _ = QFileDialog.getSaveFileName(self, 'Save Image', './image/sticker_image',
-                                                       "PNG(*.png);;JPEG(*.jpg *.jpeg);;All Files(*.*) ")
+                # fpath, _ = QFileDialog.getSaveFileName(self, 'Save Image', './image/sticker_image',
+                #                                        "PNG(*.png);;JPEG(*.jpg *.jpeg);;All Files(*.*) ")
                 saveimg = self.label.pixmap().toImage()
         else:
-            fpath, _ = QFileDialog.getSaveFileName(self, 'Save Image', './',
-                                                   "PNG(*.png);;JPEG(*.jpg *.jpeg);;All Files(*.*) ")
+            # fpath, _ = QFileDialog.getSaveFileName(self, 'Save Image', './image/sticker_image',
+            #                                        "PNG(*.png);;JPEG(*.jpg *.jpeg);;All Files(*.*) ")
             saveimg = self.label.pixmap().toImage()
             saveimg2 = self.faceLabel.pixmap().toImage()
 
@@ -341,17 +379,19 @@ class VideoWindow(QMainWindow):
 
         if fpath:
             saveimg.save(fpath)
-            self.popup.setIcon(QIcon('./image/background_image/popup.png'))
+            self.popup.setIcon(QIcon('./image/background_image/sticker_popup.png'))
             self.popup.setVisible(True)
-            # QMessageBox.about(
-            #     self, 'Message', '이미지가 저장되었습니다!'
-            # )
-        sticker_group, self.sticker_file_path = self.createLayout_group('./image/sticker_image/',
-                                                                        self.sticker_btnGroup)
-        self.sticker_scrollarea.setWidget(sticker_group)
+            with open('./remove.txt', 'a') as f:
+                f.write(fpath+'\n')
+
+            sticker_group, self.sticker_file_path = self.createLayout_group('./image/sticker_image/',
+                                                                            self.sticker_btnGroup)
+            self.sticker_scrollarea.setWidget(sticker_group)
 
     def sharePressEvent(self):
         fpath = 'temporary_v.png'
+        with open('./remove.txt', 'a') as f:
+            f.write(fpath + '\n')
         if self.video_thread.seg: # 신체
             if self.body_back:    # 스티커붙인 배경 저장
                 saveimg = self.bodyLabel.pixmap().toImage()
@@ -367,18 +407,16 @@ class VideoWindow(QMainWindow):
         # 이메일 주소 부르기
         with open('./email.txt', 'r') as f:
             to_email = f.readline()
-            f.close()
+
         if fpath:
             saveimg.save(fpath)
             # 이메일로 이미지 전송 thread
             self.th = email_send.emailTread(to_email, fpath)
             self.th.start()
 
-            self.popup.setIcon(QIcon('./image/background_image/popup.png'))
+            self.popup.setIcon(QIcon('./image/background_image/share_popup.png'))
             self.popup.setVisible(True)
-            # QMessageBox().about(
-            #     self, 'Message', '이미지가 공유되었습니다!'
-            # )
+
 
     def setSticker(self, num):
         self.mouse = True
@@ -388,7 +426,7 @@ class VideoWindow(QMainWindow):
         self.sticker_size = size
 
     def setStickerScroll(self, set):
-        if self.bodyLabel.pixmap() or self.faceLabel.pixmap() :
+        if self.bodyLabel.pixmap() or self.faceLabel.pixmap():
             if set:
                 self.sticker_scrollarea.setVisible(True)
                 self.stickerSlider.setVisible(True)
@@ -405,14 +443,10 @@ class VideoWindow(QMainWindow):
     @pyqtSlot(np.ndarray)
     def setImage(self, frame):
         if self.video_thread.time_check:
-            self.textLabel.setVisible(True)
-            self.textLabel.setText('%d'%self.video_thread.set_time)
-            self.textLabel.setFont(QFont("Arial",int(background_h*0.1337)))
-            self.textLabel.setStyleSheet('color: red')
-            # self.textLabel.setAlignment(Qt.AlignCenter)
-            # self.textLabel.set
-        else:
-            self.textLabel.setVisible(False)
+            self.video_thread.textLabel.setVisible(True)
+            self.video_thread.textLabel.setText('%d'%self.video_thread.set_time)
+            self.video_thread.textLabel.setFont(QFont("Arial",int(background_h*0.11)))
+            self.video_thread.textLabel.setStyleSheet('color: red')
         h, w, ch = frame.shape
         show_img = frame
         bytes_per_line = ch * w
@@ -425,16 +459,18 @@ class VideoWindow(QMainWindow):
         self.mainLabel.lower()
 
     def facebodyEvent(self, str):
-        self.video_thread.start()
+        # self.video_thread.start()
         # upperImage = QPixmap('./image/button_image/another2.png').scaled(
         #     QSize(int(background_w * 0.1472), int(background_h * 0.03645)))
         # self.anotherLabel.setPixmap(QPixmap(upperImage))
-        self.anotherLabel.setVisible(False)
-        self.anotherLabel2.setVisible(True)
+        # self.anotherLabel.setVisible(False)
+        self.manualButton.setVisible(True)
         self.shareButton.setVisible(True)
+        self.runButton.raise_()
         self.bodyButton.hide()
         self.faceButton.hide()
         self.programRun = True
+        self.now_run = True
 
         self.stickerButton.show()
         self.saveButton.show()
@@ -448,6 +484,10 @@ class VideoWindow(QMainWindow):
             self.video_thread.seg = True
             self.video_thread.changeSeg.connect(self.setBodySeg)
             self.body_scrollarea.setVisible(True)
+            self.bg_image = cv2.imread('./image/background_image/canvas.png', cv2.IMREAD_UNCHANGED)
+            self.bg_image = cv2.cvtColor(self.bg_image, cv2.COLOR_BGRA2RGBA)
+            self.bg_image = cv2.resize(self.bg_image, (background_w, int(background_h * 0.7354)),
+                                                    interpolation=cv2.INTER_AREA)
         self.label.show()
 
     def setFace(self, num):
@@ -467,21 +507,20 @@ class VideoWindow(QMainWindow):
         # self.upperLabel.raise_()
         self.mainLabel.lower()
         self.upperLabel.raise_()
-        self.anotherLabel2.raise_()
+        self.manualButton.raise_()
         self.anotherLabel1.raise_()
         self.runButton.raise_()
 
 
-    @pyqtSlot(np.ndarray)
-    def setBodySeg(self, output_image):
+    @pyqtSlot(np.ndarray, np.ndarray)
+    def setBodySeg(self, image, condition):
         if self.video_thread.time_check:
-            self.textLabel.setVisible(True)
-            self.textLabel.setText('%d'%self.video_thread.set_time)
-            self.textLabel.setFont(QFont("Arial",int(background_h*0.1337)))
-            self.textLabel.setStyleSheet('color: red')
+            self.video_thread.textLabel.setVisible(True)
+            self.video_thread.textLabel.setText('%d'%self.video_thread.set_time)
+            self.video_thread.textLabel.setFont(QFont("Arial",int(background_h*0.11)))
+            self.video_thread.textLabel.setStyleSheet('color: red')
 
-        else:
-            self.textLabel.setVisible(False)
+        output_image = np.where(condition, image, self.bg_image)
         h, w, ch = output_image.shape
         show_img = output_image
         bytes_per_line = ch * w
@@ -495,11 +534,10 @@ class VideoWindow(QMainWindow):
 
 
     def setBody(self, num):
-        self.video_thread.capture = False
+        # self.video_thread.capture = False
         self.body_back = True
-
-        bodyPixmap = QPixmap('./image/background/큰창/%s'%self.body_file_path[num]).scaled(
-            QSize(background_w, int(background_h * 0.7354)))
+        # bodyPixmap = QPixmap('./image/background/큰창/%s'%self.body_file_path[num]).scaled(
+        #     QSize(background_w, int(background_h * 0.7354)))
 
         if os.path.isfile('./image/background/설명/'+self.body_file_path[num]):
             if self.before_num == None:
@@ -509,12 +547,23 @@ class VideoWindow(QMainWindow):
                 self.body_btnGroup.button(num).setIcon(QIcon('./image/background/설명/'+self.body_file_path[num]))
         self.before_num = num
 
+        img_array = './image/background/큰창/%s'%self.body_file_path[num]
+        img_array = np.fromfile(img_array, np.uint8)
+        self.bg_image = cv2.imdecode(img_array, cv2.IMREAD_COLOR)
+        self.bg_image = cv2.cvtColor(self.bg_image, cv2.COLOR_BGRA2RGBA)
+        self.bg_image = cv2.resize(self.bg_image, (background_w, int(background_h * 0.7354)),
+                                   interpolation=cv2.INTER_CUBIC)
+
+        bodyPixmap = QPixmap('./image/background_image/canvas.png').scaled(
+            QSize(background_w, int(background_h * 0.7354)))
         self.bodyLabel.setPixmap(QPixmap(bodyPixmap))
+        # self.bodyLabel.setPixmap(QPixmap(bodyPixmap))
         self.mainLabel.lower()
         self.upperLabel.raise_()
-        self.anotherLabel2.raise_()
+        self.manualButton.raise_()
         self.anotherLabel1.raise_()
-        self.label.hide()
+        self.runButton.raise_()
+        # self.label.hide()
 
     def popupEvent(self):
         self.popup.setVisible(False)
@@ -542,7 +591,7 @@ class VideoWindow(QMainWindow):
         return sgroupbox, file_path
 
     def undoredoEvent(self, str):
-        if not self.video_thread.seg:
+        if not self.video_thread.seg and self.faceLabel.pixmap():
             now = self.faceLabel.pixmap().toImage()
             if str == 'undo' and self.undo:
                 self.redo.append(now)
@@ -555,11 +604,11 @@ class VideoWindow(QMainWindow):
                 self.undo.append(now)
                 pix = QPixmap.fromImage(self.redo[-1])
                 self.faceLabel.setPixmap(QPixmap(pix))
-                print(len(self.redo))
+                # print(len(self.redo))
                 del self.redo[-1]
                 if not self.redo:
                     self.redoButton.setEnabled(False)
-        else:
+        elif self.video_thread.seg and self.bodyLabel.pixmap():
             now = self.bodyLabel.pixmap().toImage()
             if str == 'undo' and self.undo:
                 self.redo.append(now)
@@ -575,7 +624,7 @@ class VideoWindow(QMainWindow):
                 self.undo.append(now)
                 pix = QPixmap.fromImage(self.redo[-1])
                 self.bodyLabel.setPixmap(QPixmap(pix))
-                print(len(self.redo))
+                # print(len(self.redo))
                 del self.redo[-1]
                 if not self.redo:
                     self.redoButton.setEnabled(False)
@@ -613,8 +662,8 @@ class VideoWindow(QMainWindow):
 
 class VideoThread(QThread):
     changePixmap = pyqtSignal(np.ndarray)
-    changeSeg = pyqtSignal(np.ndarray)
-
+    changeSeg = pyqtSignal(np.ndarray, np.ndarray)
+    label_control = pyqtSignal(np.ndarray)
 
     seg = False
     capture = False
@@ -625,11 +674,12 @@ class VideoThread(QThread):
 
     set_time = 5
 
+    textLabel = QLabel()
     def run(self):
         self.capture = True
 
-        bg_image = cv2.imread('./image/background_image/canvas.png', cv2.IMREAD_UNCHANGED)
-        bg_image = cv2.cvtColor(bg_image, cv2.COLOR_BGRA2RGBA)
+        # bg_image = cv2.imread('./image/background_image/canvas.png', cv2.IMREAD_UNCHANGED)
+        # bg_image = cv2.cvtColor(bg_image, cv2.COLOR_BGRA2RGBA)
         # add_dim = np.zeros((background_h, background_w), dtype=np.uint8)
 
         mp_selfie_segmentation = mp.solutions.selfie_segmentation
@@ -653,10 +703,12 @@ class VideoThread(QThread):
 
                     condition = np.stack((results.segmentation_mask,) * 4, axis=-1) > 0.5
 
-                    bg_image = cv2.resize(bg_image, (image.shape[1], image.shape[0]), interpolation = cv2.INTER_AREA)
+                    self.changeSeg.emit(image, condition)
 
-                    output_image = np.where(condition, image, bg_image)
-                    self.changeSeg.emit(output_image)
+                    # bg_image = cv2.resize(bg_image, (image.shape[1], image.shape[0]), interpolation = cv2.INTER_AREA)
+                    #
+                    # output_image = np.where(condition, image, bg_image)
+                    # self.changeSeg.emit(output_image)
             else:
                 self.changePixmap.emit(frame)
 
@@ -667,6 +719,7 @@ class VideoThread(QThread):
                     self.set_time = 5- (time.time() - self.start_time) +1
                 if time.time() - self.start_time >= 5:
                     self.time_check = False
+                    self.textLabel.setVisible(False)
                     self.start_time = None
                     self.capture = False
                     self.set_time = 5

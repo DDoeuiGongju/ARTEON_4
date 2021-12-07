@@ -19,12 +19,11 @@ class BackWindow(QMainWindow):
         super().__init__()
         self.mainLabel = QLabel(self)
         self.mainLabel.resize(QSize(background_w, background_h))
+
         # 배경 이미지
         self.startImage = QPixmap('./image/background_image/video_back.png')
         self.startImage = self.startImage.scaled(QSize(background_w, background_h))
         self.mainLabel.setPixmap(self.startImage)
-        # self.palette = QPalette()
-        # self.palette.setBrush(10, QBrush(self.startImage))
 
         # 상단 이미지
         self.upperLabel = QLabel(self)
@@ -138,9 +137,9 @@ class BackWindow(QMainWindow):
 
         # 스티커 크기 조정 슬라이더
         self.stickerSlider = QSlider(Qt.Vertical, self)
-        self.stickerSlider.setGeometry(int(background_w * 0.037), int(background_h * 0.3458),
-                                       int(background_w * 0.0324), int(background_h * 0.2625))
-        self.stickerSlider.setRange(int((background_w * 0.2) / 2), int((background_w * 0.2) * 2))
+        self.stickerSlider.setGeometry(int(background_w * 0.06), int(background_h * 0.3458),
+                                       int(background_w * 0.0324), int(background_h * 0.3328))
+        self.stickerSlider.setRange(int((background_w * 0.2) / 2), int((background_w * 0.2) * 4))
         self.stickerSlider.valueChanged[int].connect(self.changeSticker_size)
         self.stickerSlider.setStyleSheet(style2)
         self.stickerSlider.setVisible(False)
@@ -167,7 +166,7 @@ class BackWindow(QMainWindow):
 
         # 팝업 버튼
         self.popup = QPushButton(self)
-        self.popup.setIcon(QIcon('./image/background_image/popup.png'))
+        self.popup.setIcon(QIcon('./image/background_image/share_popup.png'))
         self.popup.setIconSize(QSize(int(background_w * 0.5713), int(background_h * 0.05886)))
         self.popup.setGeometry(int(background_w * 0.23055), int(background_h * 0.44114), int(background_w * 0.5713),
                                int(background_h * 0.05886))
@@ -175,6 +174,21 @@ class BackWindow(QMainWindow):
         self.popup.clicked.connect(self.popupEvent)
         self.popup.setVisible(False)
 
+
+        self._home_window = None
+        self.homeButton = QPushButton(self)
+        self.homeButton.setIcon(QIcon('./image/button_image/home.png'))
+        self.homeButton.setIconSize(QSize(int(background_w * 0.04629), int(background_h * 0.0282)))
+        self.homeButton.clicked.connect(self.goHome)
+        self.homeButton.setGeometry(int(background_w * 0.14722), int(background_h * 0.1776),
+                                    int(background_w * 0.04629), int(background_h * 0.0282))
+        self.homeButton.setStyleSheet("background-color: rgba(0,0,0,0%);border-style: outset;")
+
+    # 처음으로
+    def goHome(self):
+        if self._home_window is None:
+            self._home_window = start_UI.StartWindow()
+        self.setCentralWidget(self._home_window)
 
     def changeSticker_size(self, size):
         self.sticker_size = size
@@ -218,6 +232,8 @@ class BackWindow(QMainWindow):
             layout_groupbox.addWidget(button)
         return sgroupbox, file_path
 
+
+
     def setBackground(self, num):
         self.undo, self.redo = [], []
         self.back_pixmap = QPixmap('./image/background/큰창/'+self.back_file_path[num]).scaled(
@@ -225,7 +241,6 @@ class BackWindow(QMainWindow):
 
         if os.path.isfile('./image/background/설명/'+self.back_file_path[num]):
             if self.before_num == None:
-                print(self.before_num)
                 self.bg_btnGroup.button(num).setIcon(QIcon('./image/background/설명/' + self.back_file_path[num]))
             elif self.before_num != num:
                 self.bg_btnGroup.button(self.before_num).setIcon(QIcon('./image/background/썸네일/' + self.back_file_path[self.before_num]))
@@ -242,10 +257,7 @@ class BackWindow(QMainWindow):
     def backPressEvent(self):
         if self._back_window is None:
             self._back_window = start_UI.MakeWindow()
-        # self._back_window.show()
         self.setCentralWidget(self._back_window)
-        self.mainLabel.setVisible(False)
-        # self.close()
 
     def mousePressEvent(self, e):
         if self.mouse:
@@ -281,7 +293,7 @@ class BackWindow(QMainWindow):
             self.undo.append(now)
             pix = QPixmap.fromImage(self.redo[-1])
             self.backgroundLabel.setPixmap(QPixmap(pix))
-            print(len(self.redo))
+            # print(len(self.redo))
             del self.redo[-1]
             if not self.redo:
                 self.redoButton.setEnabled(False)
@@ -290,23 +302,28 @@ class BackWindow(QMainWindow):
         fpath = None
         image = None
         if self.backgroundLabel:
-            fpath, _ = QFileDialog.getSaveFileName(self, 'Save Image', '',
-                                                   "PNG(*.png);;JPEG(*.jpg *.jpeg);;All Files(*.*) ")
+            # fpath, _ = QFileDialog.getSaveFileName(self, 'Save Image', './image/sticker_image',
+            #                                        "PNG(*.png);;JPEG(*.jpg *.jpeg);;All Files(*.*) ")
+            fpath = './image/sticker_image/%f.png' % np.random.rand(1)
             image = self.backgroundLabel.pixmap().toImage()
         if fpath:
             image.save(fpath)
-            self.popup.setIcon(QIcon('./image/background_image/popup.png'))
+            self.popup.setIcon(QIcon('./image/background_image/sticker_popup.png'))
             self.popup.setVisible(True)
-            # QMessageBox.about(
-            #     self, 'Message', '이미지가 저장되었습니다!'
-            # )
+            with open('./remove.txt', 'a') as f:
+                f.write(fpath+'\n')
+
+            sticker_group, self.sticker_file_path = self.createLayout_group('./image/sticker_image/',
+                                                                            self.sticker_btnGroup)
+            self.sticker_scrollarea.setWidget(sticker_group)
 
     def sharePressEvent(self):
         fpath = 'temporary_b.png'
+        with open('./remove.txt', 'a') as f:
+            f.write(fpath + '\n')
         with open('./email.txt', 'r') as f:
             to_email = f.readline()
-            f.close()
-        print(to_email)
+
         self.saveimg = QImage(self.backgroundLabel.pixmap().toImage())
         if fpath:
             self.saveimg.save(fpath)
@@ -315,7 +332,7 @@ class BackWindow(QMainWindow):
             self.th = email_send.emailTread(to_email, fpath)
             self.th.start()
 
-            self.popup.setIcon(QIcon('./image/background_image/popup.png'))
+            self.popup.setIcon(QIcon('./image/background_image/share_popup.png'))
             self.popup.setVisible(True)
             # QMessageBox.about(
             #     self, 'Message', '이미지가 공유되었습니다!'
